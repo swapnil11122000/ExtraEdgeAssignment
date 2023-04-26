@@ -14,7 +14,7 @@ namespace ExtraEdge.Models
         [Required]
         public int MobileId  { get; set; }
         [Required]
-        public string  PurchaseDate { get; set; }
+        public DateTime  PurchaseDate { get; set; }
         [Required]
         public int PurchasePrice { get; set; }
         [Required]

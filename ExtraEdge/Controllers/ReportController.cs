@@ -1,11 +1,12 @@
 ﻿using ExtraEdge.Data;
+using ExtraEdge.Models;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using System.Runtime.CompilerServices;
 
 namespace ExtraEdge.Controllers
 {
-    [Route("api/monthlysalesreport")]
+    [Route("api/[controller]")]
     [ApiController]
     public class ReportController : ControllerBase
     {
@@ -18,39 +19,40 @@ namespace ExtraEdge.Controllers
 
 
         [HttpGet("GetMonthlySalesReport")]
-        public ActionResult<MonthlySalesReport> GetMonthlySalesReport(DateTime fromDate, DateTime toDate)
+        public ActionResult GetMonthlySalesReport(DateTime fromDate, DateTime toDate)
         {
-            var purchases = db.purchases
-                .Where(p =>
-                {
-                    return p.PurchaseDate >= fromDate && p.PurchaseDate <= toDate;
-                })
-                .ToList();
+            var purchases = (from p in db.purchases
+                           where p.PurchaseDate > fromDate && p.PurchaseDate < toDate
+                           select p).ToList();
 
             var totalSales = purchases.Sum(p => p.FinalPrice);
 
-            var monthlySalesReport = new MonthlySalesReport
-            {
-                FromDate = fromDate,
-                ToDate = toDate,
-                TotalSales = totalSales
-            };
+            
 
-            return monthlySalesReport;
+            return new ObjectResult(purchases);
         }
 
 
         [HttpGet("sales-report-by-brand")]
         public IActionResult GetSalesReportByBrand(DateTime fromDate, DateTime toDate)
         {
-            var salesByBrand = db.purchases
-                .Where(p => p.PurchaseDate >= fromDate && p.PurchaseDate <= toDate)
-                .GroupBy(p => p.Mobile.Brand.Name)
-                .Select(g => new {
-                    Brand = g.Key,
-                    TotalSales = g.Sum(p => p.FinalPrice)
-                })
-                .ToList();
+            var salesByBrand = from p in db.purchases
+                               join mb in db.mobiles on p.MobileId equals mb.MobileId into mobilepurchase
+                               where p.PurchaseDate > fromDate && p.PurchaseDate < toDate
+
+                               select new
+                               {
+                                   
+                                   purchasedate = p.PurchaseDate,
+                                   purchaseprice = p.PurchasePrice,
+                                   discount = p.Discount,
+                                   finalprice = p.FinalPrice,
+                                  
+                               };
+                              
+                             
+
+
 
             return Ok(salesByBrand);
         }
